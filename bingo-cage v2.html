@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bingo Cage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy-deep:#0d1730;
+    --navy:#132247;
+    --navy-panel:#182a54;
+    --navy-line:#2a3d6b;
+    --gold:#e7b23e;
+    --gold-bright:#ffcf5c;
+    --cream:#f5efdd;
+    --cream-dim:#d9d2ba;
+    --red:#d1453b;
+    --teal:#3ea89a;
+    --text:#f2eddc;
+    --muted:#93a0c2;
+    --radius-lg:22px;
+    --radius-md:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(circle at 20% -10%, #1b2f5e 0%, transparent 45%),
+      radial-gradient(circle at 100% 10%, #1a2c56 0%, transparent 40%),
+      var(--navy-deep);
+    color:var(--text);
+    font-family:'Space Grotesk', sans-serif;
+    min-height:100vh;
+    padding:28px 20px 60px;
+  }
+  .wrap{max-width:1180px;margin:0 auto;}
+
+  /* ---------- Header ---------- */
+  header{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-bottom:26px;
+    border-bottom:1px solid var(--navy-line);
+    padding-bottom:18px;
+  }
+  h1{
+    font-family:'Bungee', sans-serif;
+    font-weight:400;
+    font-size:clamp(28px, 4.4vw, 44px);
+    margin:0;
+    color:var(--gold-bright);
+    letter-spacing:1px;
+    text-shadow: 0 2px 0 #7a5314, 0 4px 10px rgba(0,0,0,0.35);
+  }
+  header .tag{
+    color:var(--muted);
+    font-size:13px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+  }
+
+  /* ---------- Layout ---------- */
+  .stage{
+    display:grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap:22px;
+    align-items:start;
+  }
+  @media (max-width: 880px){
+    .stage{grid-template-columns:1fr;}
+  }
+
+  .panel{
+    background:linear-gradient(180deg, var(--navy-panel), var(--navy));
+    border:1px solid var(--navy-line);
+    border-radius:var(--radius-lg);
+    padding:20px;
+  }
+
+  /* ---------- Cage ---------- */
+  .cage-panel{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:16px;
+    position:relative;
+  }
+  .cage-frame{
+    position:relative;
+    width:100%;
+    aspect-ratio:1/1;
+    max-width:480px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  canvas{
+    width:100%;
+    height:100%;
+    display:block;
+  }
+  .cage-chute{
+    position:absolute;
+    bottom:2%;
+    left:50%;
+    transform:translateX(-50%);
+    width:22%;
+    height:8%;
+    background:linear-gradient(180deg, var(--gold) 0%, #a97b1e 100%);
+    border-radius:0 0 10px 10px;
+    box-shadow: inset 0 -3px 6px rgba(0,0,0,.35), 0 3px 6px rgba(0,0,0,.4);
+  }
+  .cage-caption{
+    font-size:12px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--muted);
+    text-align:center;
+  }
+  .cage-caption strong{color:var(--gold-bright);}
+
+  .spin-row{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    flex-wrap:wrap;
+    justify-content:center;
+    width:100%;
+  }
+  #spinBtn{
+    font-family:'Bungee', sans-serif;
+    font-size:20px;
+    letter-spacing:1px;
+    padding:16px 40px;
+    background:linear-gradient(180deg, var(--red) 0%, #a5231c 100%);
+    color:var(--cream);
+    border:none;
+    border-radius:999px;
+    cursor:pointer;
+    box-shadow: 0 6px 0 #7a1712, 0 10px 18px rgba(0,0,0,.4);
+    transition:transform .08s ease, box-shadow .08s ease, filter .2s ease;
+  }
+  #spinBtn:hover:not(:disabled){filter:brightness(1.08);}
+  #spinBtn:active:not(:disabled){
+    transform:translateY(4px);
+    box-shadow: 0 2px 0 #7a1712, 0 4px 10px rgba(0,0,0,.4);
+  }
+  #spinBtn:disabled{
+    background:#4a4f63;
+    box-shadow:0 6px 0 #33364440;
+    color:#9aa0b5;
+    cursor:not-allowed;
+  }
+  .status-line{
+    font-size:13px;
+    color:var(--muted);
+    min-height:18px;
+    text-align:center;
+  }
+  .status-line.warn{color:var(--gold);}
+
+  /* ---------- Config panel ---------- */
+  .config-panel h2, .draw-panel h2{
+    font-family:'Bungee', sans-serif;
+    font-weight:400;
+    font-size:15px;
+    letter-spacing:.06em;
+    color:var(--gold-bright);
+    margin:0 0 14px;
+  }
+  .mode-tabs{
+    display:flex;
+    gap:6px;
+    background:var(--navy-deep);
+    padding:5px;
+    border-radius:999px;
+    margin-bottom:16px;
+  }
+  .mode-tabs button{
+    flex:1;
+    border:none;
+    background:transparent;
+    color:var(--muted);
+    padding:9px 8px;
+    border-radius:999px;
+    font-family:'Space Grotesk';
+    font-weight:600;
+    font-size:13px;
+    cursor:pointer;
+    transition:background .15s ease, color .15s ease;
+  }
+  .mode-tabs button.active{
+    background:var(--gold);
+    color:var(--navy-deep);
+  }
+  .field-group{margin-bottom:14px;}
+  .field-group label{
+    display:block;
+    font-size:12px;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    margin-bottom:6px;
+  }
+  .range-row{display:flex;align-items:center;gap:10px;}
+  .range-row span{color:var(--muted);font-size:13px;}
+  input[type=number], input[type=text], textarea{
+    background:var(--navy-deep);
+    border:1px solid var(--navy-line);
+    color:var(--text);
+    border-radius:10px;
+    padding:10px 12px;
+    font-family:'Space Grotesk';
+    font-size:14px;
+    width:100%;
+  }
+  input[type=number]{width:90px;}
+  input:focus, textarea:focus, button:focus-visible{
+    outline:2px solid var(--gold-bright);
+    outline-offset:2px;
+  }
+  textarea{
+    resize:vertical;
+    min-height:88px;
+    line-height:1.5;
+  }
+  .hint{font-size:11.5px;color:var(--muted);margin-top:5px;}
+  .toggle-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:var(--navy-deep);
+    border:1px solid var(--navy-line);
+    border-radius:10px;
+    padding:10px 12px;
+    margin-bottom:14px;
+  }
+  .toggle-row span{font-size:13px;}
+  .switch{position:relative;width:40px;height:22px;flex-shrink:0;}
+  .switch input{opacity:0;width:0;height:0;position:absolute;}
+  .slider{
+    position:absolute;inset:0;
+    background:#3b4468;
+    border-radius:999px;
+    cursor:pointer;
+    transition:.2s;
+  }
+  .slider::before{
+    content:"";
+    position:absolute;
+    width:16px;height:16px;
+    left:3px;top:3px;
+    background:var(--cream);
+    border-radius:50%;
+    transition:.2s;
+  }
+  .switch input:checked + .slider{background:var(--teal);}
+  .switch input:checked + .slider::before{transform:translateX(18px);}
+
+  .btn-row{display:flex;gap:10px;margin-top:4px;}
+  .btn-secondary{
+    flex:1;
+    background:var(--navy-deep);
+    border:1px solid var(--navy-line);
+    color:var(--text);
+    padding:11px 12px;
+    border-radius:10px;
+    font-family:'Space Grotesk';
+    font-weight:600;
+    font-size:13.5px;
+    cursor:pointer;
+    transition:border-color .15s ease, color .15s ease;
+  }
+  .btn-secondary:hover{border-color:var(--gold);color:var(--gold-bright);}
+  .btn-secondary.danger:hover{border-color:var(--red);color:#ff8a82;}
+
+  .pool-meta{
+    display:flex;
+    justify-content:space-between;
+    font-size:12.5px;
+    color:var(--muted);
+    margin-top:14px;
+    padding-top:12px;
+    border-top:1px dashed var(--navy-line);
+  }
+  .pool-meta strong{color:var(--gold-bright);font-size:15px;display:block;}
+
+  /* ---------- Draw / result panel ---------- */
+  .draw-panel{margin-top:22px;}
+  .result-area{
+    display:flex;
+    align-items:center;
+    gap:18px;
+    margin-bottom:18px;
+  }
+  .result-ball{
+    width:96px;height:96px;
+    border-radius:50%;
+    background:radial-gradient(circle at 32% 28%, #fffceb, var(--cream) 55%, var(--cream-dim) 100%);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+    box-shadow: 0 6px 14px rgba(0,0,0,.4), inset 0 -6px 10px rgba(0,0,0,.12);
+    border:3px solid var(--gold);
+    font-family:'Bungee', sans-serif;
+    color:var(--navy-deep);
+    font-size:15px;
+    text-align:center;
+    padding:6px;
+    line-height:1.15;
+    transform:scale(0.4);
+    opacity:0;
+    transition:transform .5s cubic-bezier(.34,1.56,.64,1), opacity .3s ease;
+    word-break:break-word;
+  }
+  .result-ball.show{transform:scale(1);opacity:1;}
+  .result-text{flex:1;}
+  .result-text .label{
+    font-size:11px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--muted);
+  }
+  .result-text .value{
+    font-family:'Bungee', sans-serif;
+    font-size:15px;
+    color:var(--text);
+    margin-top:4px;
+  }
+  .history-label{
+    font-size:12px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin-bottom:10px;
+    display:flex;
+    justify-content:space-between;
+  }
+  .history-list{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    max-height:190px;
+    overflow-y:auto;
+    padding-right:2px;
+  }
+  .chip{
+    background:var(--navy-deep);
+    border:1px solid var(--navy-line);
+    color:var(--cream);
+    padding:6px 11px;
+    border-radius:999px;
+    font-size:12.5px;
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .chip .n{
+    background:var(--gold);
+    color:var(--navy-deep);
+    border-radius:50%;
+    width:18px;height:18px;
+    font-size:10px;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;
+  }
+  .empty-note{color:var(--muted);font-size:13px;font-style:italic;}
+
+  ::-webkit-scrollbar{width:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--navy-line);border-radius:4px;}
+
+  .sr-only{
+    position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+    overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .result-ball{transition:none;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Bingo Cage</h1>
+      <div class="tag">spin it, stop it, draw one</div>
+    </div>
+    <div class="tag" id="modeSummary">30 numbers loaded &middot; 1&ndash;30</div>
+  </header>
+
+  <div class="stage">
+    <!-- CAGE -->
+    <div class="panel cage-panel">
+      <div class="cage-frame">
+        <canvas id="cageCanvas"></canvas>
+        <div class="cage-chute"></div>
+      </div>
+      <div class="cage-caption"><strong id="remainingCount">30</strong> balls tumbling in the cage</div>
+      <div class="spin-row">
+        <button id="spinBtn">SPIN</button>
+      </div>
+      <div class="status-line" id="statusLine">Give it a spin.</div>
+      <div class="sr-only" id="liveRegion" aria-live="polite"></div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div>
+      <div class="panel config-panel">
+        <h2>Load the Cage</h2>
+        <div class="mode-tabs" role="tablist">
+          <button type="button" class="active" data-mode="numbers">Numbers</button>
+          <button type="button" data-mode="letters">Letters</button>
+          <button type="button" data-mode="list">Custom List</button>
+        </div>
+
+        <div id="modeNumbers">
+          <div class="field-group">
+            <label>Range</label>
+            <div class="range-row">
+              <input type="number" id="numFrom" value="1">
+              <span>to</span>
+              <input type="number" id="numTo" value="30">
+            </div>
+            <div class="hint">Classic bingo cage: 1&ndash;30. Change it to whatever range you need.</div>
+          </div>
+        </div>
+
+        <div id="modeLetters" style="display:none;">
+          <div class="field-group">
+            <label>Range</label>
+            <div class="range-row">
+              <input type="text" id="letFrom" value="A" maxlength="1" style="width:60px;text-align:center;text-transform:uppercase;">
+              <span>to</span>
+              <input type="text" id="letTo" value="Z" maxlength="1" style="width:60px;text-align:center;text-transform:uppercase;">
+            </div>
+            <div class="hint">Single letters, e.g. A to Z, or a narrower slice like C to M.</div>
+          </div>
+        </div>
+
+        <div id="modeList" style="display:none;">
+          <div class="field-group">
+            <label>Names / items</label>
+            <textarea id="listInput" placeholder="One per line, or comma-separated&#10;e.g.&#10;Alice&#10;Bharat&#10;Chen&#10;Dana"></textarea>
+            <div class="hint">Great for raffles, team picks, or party games.</div>
+          </div>
+        </div>
+
+        <div class="toggle-row">
+          <span>Remove after each draw</span>
+          <label class="switch">
+            <input type="checkbox" id="removeToggle" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn-secondary" id="loadBtn">Load Cage</button>
+          <button class="btn-secondary danger" id="resetBtn">Reset Game</button>
+        </div>
+
+        <div class="pool-meta">
+          <div>Balls remaining<strong id="poolRemaining">30</strong></div>
+          <div>Drawn so far<strong id="poolDrawn">0</strong></div>
+        </div>
+      </div>
+
+      <div class="panel draw-panel">
+        <h2>Latest Draw</h2>
+        <div class="result-area">
+          <div class="result-ball" id="resultBall">&mdash;</div>
+          <div class="result-text">
+            <div class="label">Just called</div>
+            <div class="value" id="resultValue">Nothing yet</div>
+          </div>
+        </div>
+        <div class="history-label"><span>Call History</span><span id="historyCount">0 called</span></div>
+        <div class="history-list" id="historyList">
+          <div class="empty-note">Spin the cage to start calling.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const MAX_POOL = 200;
+  const PALETTE = ['#e7b23e','#d1453b','#3ea89a','#c78ce0','#5da0e0','#e08a4f'];
+
+  const canvas = document.getElementById('cageCanvas');
+  const ctx = canvas.getContext('2d');
+  const spinBtn = document.getElementById('spinBtn');
+  const statusLine = document.getElementById('statusLine');
+  const remainingCountEl = document.getElementById('remainingCount');
+  const poolRemainingEl = document.getElementById('poolRemaining');
+  const poolDrawnEl = document.getElementById('poolDrawn');
+  const resultBall = document.getElementById('resultBall');
+  const resultValue = document.getElementById('resultValue');
+  const historyList = document.getElementById('historyList');
+  const historyCount = document.getElementById('historyCount');
+  const liveRegion = document.getElementById('liveRegion');
+  const modeSummary = document.getElementById('modeSummary');
+  const removeToggle = document.getElementById('removeToggle');
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const modeButtons = document.querySelectorAll('.mode-tabs button');
+  const modeSections = {numbers: document.getElementById('modeNumbers'), letters: document.getElementById('modeLetters'), list: document.getElementById('modeList')};
+  let mode = 'numbers';
+
+  modeButtons.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      modeButtons.forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      mode = btn.dataset.mode;
+      Object.keys(modeSections).forEach(k=> modeSections[k].style.display = (k===mode ? 'block':'none'));
+    });
+  });
+
+  let originalPool = [];  // full logical set, for "with replacement" mode
+  let pool = [];          // items remaining to be drawn
+  let balls = [];         // physics balls, 1:1 with pool while removeAfterDraw
+  let called = [];
+  let spinning = false;
+  let W=0, H=0, R=0, CX=0, CY=0;
+  let animId = null;
+  let phase = 'idle'; // idle | spin | decel | reveal
+
+  function makeItem(label, shortLabel, colorIdx){
+    return {id: Math.random().toString(36).slice(2), label, shortLabel: shortLabel || label, color: PALETTE[colorIdx % PALETTE.length]};
+  }
+
+  function shortenForBall(label){
+    if(label.length <= 4) return label;
+    return label.slice(0,4) + '…';
+  }
+
+  function buildPoolFromConfig(){
+    let items = [];
+    let summary = '';
+    if(mode === 'numbers'){
+      let from = parseInt(document.getElementById('numFrom').value, 10);
+      let to = parseInt(document.getElementById('numTo').value, 10);
+      if(isNaN(from)) from = 1;
+      if(isNaN(to)) to = from;
+      if(from > to){ [from,to] = [to,from]; }
+      let n = 0;
+      for(let v=from; v<=to && n<MAX_POOL; v++, n++){
+        items.push(makeItem(String(v), String(v), n));
+      }
+      summary = `${items.length} numbers loaded · ${from}–${to}`;
+      if(to - from + 1 > MAX_POOL) statusLine.textContent = `Range capped at ${MAX_POOL} balls for a smooth cage.`;
+    } else if(mode === 'letters'){
+      let fromC = (document.getElementById('letFrom').value || 'A').toUpperCase().charCodeAt(0);
+      let toC = (document.getElementById('letTo').value || 'Z').toUpperCase().charCodeAt(0);
+      if(fromC > toC){ [fromC,toC] = [toC,fromC]; }
+      let n=0;
+      for(let c=fromC; c<=toC && n<MAX_POOL; c++, n++){
+        const ch = String.fromCharCode(c);
+        items.push(makeItem(ch, ch, n));
+      }
+      summary = `${items.length} letters loaded · ${String.fromCharCode(fromC)}–${String.fromCharCode(toC)}`;
+    } else {
+      const raw = document.getElementById('listInput').value || '';
+      const parts = raw.split(/[\n,]/).map(s=>s.trim()).filter(Boolean).slice(0, MAX_POOL);
+      if(parts.length === 0){
+        statusLine.textContent = 'Add at least one name or item to the list.';
+      }
+      parts.forEach((p,n)=> items.push(makeItem(p, shortenForBall(p), n)));
+      summary = `${items.length} items loaded · custom list`;
+    }
+    modeSummary.textContent = summary || 'Cage is empty';
+    return items;
+  }
+
+  function loadCage(){
+    originalPool = buildPoolFromConfig();
+    pool = originalPool.slice();
+    called = [];
+    resultBall.classList.remove('show');
+    resultBall.textContent = '—';
+    resultValue.textContent = 'Nothing yet';
+    historyList.innerHTML = '<div class="empty-note">Spin the cage to start calling.</div>';
+    historyCount.textContent = '0 called';
+    initBalls();
+    updateMeta();
+    statusLine.textContent = pool.length ? 'Cage loaded. Give it a spin.' : 'Cage is empty — add some entries first.';
+    spinBtn.disabled = pool.length === 0;
+  }
+
+  function resetGame(){
+    pool = originalPool.slice();
+    called = [];
+    resultBall.classList.remove('show');
+    resultBall.textContent = '—';
+    resultValue.textContent = 'Nothing yet';
+    historyList.innerHTML = '<div class="empty-note">Spin the cage to start calling.</div>';
+    historyCount.textContent = '0 called';
+    initBalls();
+    updateMeta();
+    statusLine.textContent = 'Game reset. Full cage is back.';
+    spinBtn.disabled = pool.length === 0;
+  }
+
+  function updateMeta(){
+    remainingCountEl.textContent = pool.length;
+    poolRemainingEl.textContent = pool.length;
+    poolDrawnEl.textContent = called.length;
+  }
+
+  function resize(){
+    const rect = canvas.parentElement.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    W = rect.width; H = rect.height;
+    canvas.width = W*dpr; canvas.height = H*dpr;
+    canvas.style.width = W+'px'; canvas.style.height = H+'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    CX = W/2; CY = H/2;
+    R = Math.min(W,H)/2 - Math.max(10, Math.min(W,H)*0.04);
+    initBalls(true);
+  }
+
+  function ballRadiusFor(count){
+    const area = Math.PI * R * R * 0.62;
+    let r = Math.sqrt(area / Math.max(count,1)) / 1.9;
+    return Math.max(11, Math.min(30, r));
+  }
+
+  function initBalls(keepPositions){
+    const r = ballRadiusFor(pool.length);
+    balls = pool.map((item, i)=>{
+      const angle = Math.random()*Math.PI*2;
+      const dist = Math.sqrt(Math.random()) * (R - r);
+      return {
+        item,
+        x: CX + Math.cos(angle)*dist,
+        y: CY + Math.sin(angle)*dist,
+        vx: (Math.random()-0.5)*0.6,
+        vy: (Math.random()-0.5)*0.6,
+        r,
+        winner:false,
+        popScale:1
+      };
+    });
+  }
+
+  function drawCage(){
+    ctx.clearRect(0,0,W,H);
+
+    // cage back plate
+    ctx.beginPath();
+    ctx.arc(CX,CY,R+10,0,Math.PI*2);
+    ctx.fillStyle = 'rgba(255,255,255,0.02)';
+    ctx.fill();
+
+    // mesh
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(CX,CY,R,0,Math.PI*2);
+    ctx.clip();
+    ctx.strokeStyle = 'rgba(200,214,255,0.10)';
+    ctx.lineWidth = 1;
+    const step = 16;
+    for(let x=CX-R; x<=CX+R; x+=step){
+      ctx.beginPath(); ctx.moveTo(x,CY-R); ctx.lineTo(x,CY+R); ctx.stroke();
+    }
+    for(let y=CY-R; y<=CY+R; y+=step){
+      ctx.beginPath(); ctx.moveTo(CX-R,y); ctx.lineTo(CX+R,y); ctx.stroke();
+    }
+    ctx.restore();
+
+    // balls
+    balls.forEach(b=>{
+      if(b.popScale<=0) return;
+      const rr = b.r * b.popScale;
+      ctx.save();
+      ctx.translate(b.x,b.y);
+      if(b.winner){
+        ctx.shadowColor = '#ffcf5c';
+        ctx.shadowBlur = 22;
+      }
+      const grad = ctx.createRadialGradient(-rr*0.3,-rr*0.35,rr*0.1, 0,0,rr);
+      grad.addColorStop(0,'#fffdf3');
+      grad.addColorStop(0.55,'#f5efdd');
+      grad.addColorStop(1,'#d9d2ba');
+      ctx.beginPath();
+      ctx.arc(0,0,rr,0,Math.PI*2);
+      ctx.fillStyle = grad;
+      ctx.fill();
+      ctx.lineWidth = b.winner ? 3 : 2;
+      ctx.strokeStyle = b.winner ? '#ffcf5c' : b.item.color;
+      ctx.stroke();
+
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#132247';
+      const fontSize = Math.max(8, Math.min(rr*0.72, 13));
+      ctx.font = `700 ${fontSize}px 'Space Grotesk', sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(b.item.shortLabel, 0, 1);
+      ctx.restore();
+    });
+
+    // cage rim
+    ctx.beginPath();
+    ctx.arc(CX,CY,R,0,Math.PI*2);
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = '#e7b23e';
+    ctx.globalAlpha = 0.85;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.beginPath();
+    ctx.arc(CX,CY,R+6,0,Math.PI*2);
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(231,178,62,0.35)';
+    ctx.stroke();
+  }
+
+  function physicsStep(speedMul){
+    balls.forEach(b=>{
+      if(b.winner) return;
+      b.x += b.vx*speedMul;
+      b.y += b.vy*speedMul;
+      const dx = b.x-CX, dy = b.y-CY;
+      const dist = Math.sqrt(dx*dx+dy*dy);
+      const limit = R-b.r;
+      if(dist > limit && dist>0){
+        const nx = dx/dist, ny = dy/dist;
+        const dot = b.vx*nx + b.vy*ny;
+        b.vx -= 2*dot*nx;
+        b.vy -= 2*dot*ny;
+        b.x = CX + nx*limit;
+        b.y = CY + ny*limit;
+      }
+    });
+  }
+
+  let spinEndAt = 0;
+  let turbulenceTimer = 0;
+
+  function loop(ts){
+    if(phase === 'spin'){
+      turbulenceTimer -= 16;
+      if(turbulenceTimer <= 0){
+        balls.forEach(b=>{
+          if(b.winner) return;
+          const ang = Math.random()*Math.PI*2;
+          const power = 2.4 + Math.random()*2.2;
+          b.vx += Math.cos(ang)*power*0.4;
+          b.vy += Math.sin(ang)*power*0.4;
+          const speed = Math.hypot(b.vx,b.vy);
+          const maxSpeed = 6.5;
+          if(speed>maxSpeed){ b.vx = b.vx/speed*maxSpeed; b.vy = b.vy/speed*maxSpeed; }
+        });
+        turbulenceTimer = 90 + Math.random()*80;
+      }
+      physicsStep(1);
+      if(performance.now() >= spinEndAt){
+        phase = 'decel';
+      }
+    } else if(phase === 'decel'){
+      balls.forEach(b=>{ b.vx*=0.945; b.vy*=0.945; });
+      physicsStep(1);
+      const avgSpeed = balls.reduce((s,b)=>s+Math.hypot(b.vx,b.vy),0)/Math.max(balls.length,1);
+      if(avgSpeed < 0.5){
+        phase = 'idle';
+        pickWinner();
+      }
+    } else if(phase === 'idle'){
+      physicsStep(1);
+    } else if(phase === 'popping'){
+      let anyAlive=false;
+      balls.forEach(b=>{
+        if(b.winner && b.popScale>0){
+          b.popScale -= 0.06;
+          if(b.popScale<0) b.popScale=0;
+          anyAlive = true;
+        }
+      });
+      physicsStep(1);
+      if(!anyAlive){
+        finishDraw();
+        phase = 'idle';
+      }
+    }
+    drawCage();
+    animId = requestAnimationFrame(loop);
+  }
+
+  function pickWinner(){
+    if(balls.length === 0){ spinning=false; spinBtn.disabled=true; statusLine.textContent='Cage is empty.'; return; }
+    const idx = Math.floor(Math.random()*balls.length);
+    const winner = balls[idx];
+    winner.winner = true;
+    statusLine.textContent = 'And the ball is…';
+    setTimeout(()=>{
+      pendingWinner = winner;
+      phase = 'popping';
+    }, 650);
+  }
+
+  let pendingWinner = null;
+
+  function finishDraw(){
+    const winner = pendingWinner;
+    pendingWinner = null;
+    called.unshift(winner.item);
+
+    resultBall.classList.remove('show');
+    // force reflow to restart animation
+    void resultBall.offsetWidth;
+    resultBall.textContent = winner.item.shortLabel;
+    resultBall.title = winner.item.label;
+    resultBall.style.borderColor = winner.item.color;
+    resultValue.textContent = winner.item.label;
+    resultBall.classList.add('show');
+    liveRegion.textContent = 'Drew: ' + winner.item.label;
+
+    if(removeToggle.checked){
+      pool = pool.filter(it => it.id !== winner.item.id);
+      balls = balls.filter(b => b.item.id !== winner.item.id);
+    } else {
+      winner.winner = false;
+      winner.popScale = 1;
+      winner.vx = (Math.random()-0.5)*1.2;
+      winner.vy = (Math.random()-0.5)*1.2;
+    }
+
+    renderHistory();
+    updateMeta();
+    spinning = false;
+    if(pool.length === 0){
+      spinBtn.disabled = true;
+      statusLine.textContent = 'Cage is empty — every ball has been drawn.';
+    } else {
+      spinBtn.disabled = false;
+      statusLine.textContent = 'Give it a spin.';
+    }
+  }
+
+  function renderHistory(){
+    if(called.length === 0){
+      historyList.innerHTML = '<div class="empty-note">Spin the cage to start calling.</div>';
+      historyCount.textContent = '0 called';
+      return;
+    }
+    historyCount.textContent = called.length + ' called';
+    historyList.innerHTML = called.map((item, i)=>{
+      const num = called.length - i;
+      return `<div class="chip"><span class="n">${num}</span>${escapeHtml(item.label)}</div>`;
+    }).join('');
+  }
+
+  function escapeHtml(s){
+    return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  spinBtn.addEventListener('click', ()=>{
+    if(spinning || pool.length===0) return;
+    spinning = true;
+    spinBtn.disabled = true;
+    statusLine.textContent = 'Spinning…';
+    resultBall.classList.remove('show');
+
+    if(reducedMotion){
+      spinEndAt = performance.now();
+      phase = 'decel';
+      return;
+    }
+    const duration = 2200 + Math.random()*1200;
+    spinEndAt = performance.now() + duration;
+    turbulenceTimer = 0;
+    phase = 'spin';
+  });
+
+  document.getElementById('loadBtn').addEventListener('click', loadCage);
+  document.getElementById('resetBtn').addEventListener('click', resetGame);
+
+  window.addEventListener('resize', resize);
+
+  // init
+  loadCage();
+  resize();
+  animId = requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
